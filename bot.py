@@ -42,20 +42,26 @@ class InstagramDownloader:
     """Descargador de videos de Instagram usando yt-dlp"""
     
     def __init__(self):
-        self.instagram_patterns = [
-            r'https?://(?:www\.)?instagram\.com/.*',
-            r'https?://(?:www\.)?instagram\.com/p/.*',
-            r'https?://(?:www\.)?instagram\.com/reel/.*',
-            r'https?://(?:www\.)?instagram\.com/tv/.*'
-        ]
+        # Patrones más flexibles para Instagram
+        self.instagram_domains = ['instagram.com', 'www.instagram.com']
     
     def is_instagram_url(self, url):
-        """Verificar si la URL es de Instagram"""
-        return any(re.match(pattern, url) for pattern in self.instagram_patterns)
-    
+        """Verificar si la URL es de Instagram - método súper flexible"""
+        url = url.strip().lower()
+          # Verificar si contiene instagram.com en cualquier parte
+        if 'instagram.com' in url:
+            # Verificar que sea una URL válida
+            if url.startswith('http://') or url.startswith('https://'):
+                return True
+            # Si no tiene protocolo, asumir que es válida
+            elif url.startswith('instagram.com') or url.startswith('www.instagram.com'):
+                return True
+        
+        return False
+      
     def download(self, instagram_url):
         """
-        Descargar video de Instagram
+        Descargar video de Instagram con configuración optimizada
         
         Returns:
             tuple: (ruta_archivo, mensaje) o (None, mensaje_error)
@@ -67,13 +73,30 @@ class InstagramDownloader:
             temp_dir = tempfile.mkdtemp()
             logger.info(f"Descargando: {instagram_url}")
             
-            # Configurar yt-dlp
+            # Configurar yt-dlp con opciones avanzadas para Instagram
             ydl_opts = {
                 'format': 'best[ext=mp4]/best',
                 'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
                 'noplaylist': True,
                 'quiet': True,
                 'no_warnings': True,
+                # Opciones específicas para Instagram
+                'extract_flat': False,
+                'writethumbnail': False,
+                'writeinfojson': False,
+                'ignoreerrors': True,
+                # Headers para evitar bloqueos
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                    'Accept-Language': 'en-us,en;q=0.5',
+                    'Accept-Encoding': 'gzip,deflate',
+                    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+                    'Connection': 'keep-alive',
+                },
+                # Reintentos
+                'retries': 3,
+                'socket_timeout': 30,
             }
             
             # Descargar
@@ -232,11 +255,10 @@ def main():
         
         # Crear aplicación
         application = Application.builder().token(BOT_TOKEN).build()
-        
-        # Añadir handlers
+          # Añadir handlers
         application.add_handler(CommandHandler("start", start_command))
         application.add_handler(MessageHandler(
-            filters.TEXT & filters.Regex(r'https?://(?:www\.)?instagram\.com/'),
+            filters.TEXT & filters.Regex(r'.*instagram\.com.*'),
             handle_url
         ))
         application.add_handler(MessageHandler(
