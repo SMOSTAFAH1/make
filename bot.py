@@ -18,6 +18,7 @@ import tempfile
 import re
 import shutil
 import logging
+import asyncio
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 
@@ -180,11 +181,32 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         "🔄 **Procesando...**\n"
         "Descargando tu video, esto puede tomar unos segundos."
     )
-    
-    try:
-        # Descargar video
-        video_path, message = downloader.download(url)
+      try:
+        # Sistema de reintentos - hasta 5 intentos
+        max_retries = 5
+        video_path = None
+        message = ""
         
+        for attempt in range(max_retries + 1):  # +1 para incluir el intento inicial
+            if attempt > 0:
+                await processing_msg.edit_text(
+                    f"🔄 **Reintentando ({attempt}/{max_retries})...**\n"
+                    f"Descargando tu video, esto puede tomar unos segundos."
+                )
+                logger.info(f"Reintento {attempt} para usuario {user_id}")
+            
+            # Descargar video
+            video_path, message = downloader.download(url)
+            
+            # Si la descarga fue exitosa, salir del bucle
+            if video_path and os.path.exists(video_path) and os.path.getsize(video_path) > 0:
+                break
+            
+            # Si no es el último intento, esperar un poco antes del siguiente
+            if attempt < max_retries:
+                await asyncio.sleep(2)
+        
+        # Verificar si la descarga fue exitosa después de todos los intentos
         if video_path and os.path.exists(video_path):
             file_size = os.path.getsize(video_path)
             
@@ -195,7 +217,8 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                     f"Tamaño: {file_size:,} bytes\n"
                     f"Enviando video..."
                 )
-                  # Enviar video
+                
+                # Enviar video
                 with open(video_path, 'rb') as video_file:
                     await update.message.reply_video(
                         video=video_file,
@@ -217,18 +240,58 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                 
                 logger.info(f"✅ Video enviado exitosamente a usuario {user_id}")
             else:
-                await processing_msg.edit_text("❌ **Error:** Archivo vacío")
-                os.unlink(video_path)
+                # Archivo vacío después de todos los intentos
+                error_msg = await processing_msg.edit_text(
+                    f"❌ **Error: Archivo vacío**\n"
+                    f"Se intentó {max_retries + 1} veces sin éxito.\n"
+                    f"Este mensaje se eliminará en 10 segundos."
+                )
+                if video_path:
+                    os.unlink(video_path)
+                
+                # Esperar 10 segundos y limpiar mensajes
+                await asyncio.sleep(10)
+                try:
+                    await error_msg.delete()
+                    await update.message.delete()
+                    logger.info(f"🧹 Mensajes limpiados después de fallo para usuario {user_id}")
+                except Exception as cleanup_error:
+                    logger.warning(f"No se pudieron limpiar mensajes: {cleanup_error}")
         else:
-            await processing_msg.edit_text(f"❌ **Error de descarga**\n{message}")
+            # Error de descarga después de todos los intentos
+            error_msg = await processing_msg.edit_text(
+                f"❌ **Error de descarga**\n"
+                f"{message}\n"
+                f"Se intentó {max_retries + 1} veces sin éxito.\n"
+                f"Este mensaje se eliminará en 10 segundos."
+            )
+            
+            # Esperar 10 segundos y limpiar mensajes
+            await asyncio.sleep(10)
+            try:
+                await error_msg.delete()
+                await update.message.delete()
+                logger.info(f"🧹 Mensajes limpiados después de fallo para usuario {user_id}")
+            except Exception as cleanup_error:
+                logger.warning(f"No se pudieron limpiar mensajes: {cleanup_error}")
             
     except Exception as e:
         logger.error(f"Error procesando mensaje de usuario {user_id}: {e}")
-        await processing_msg.edit_text(
+        error_msg = await processing_msg.edit_text(
             f"❌ **Error inesperado**\n"
             f"Por favor, inténtalo de nuevo.\n"
-            f"Detalles: `{str(e)}`"
+            f"Detalles: `{str(e)}`\n"
+            f"Este mensaje se eliminará en 10 segundos."
         )
+        
+        # Esperar 10 segundos y limpiar mensajes
+        await asyncio.sleep(10)
+        try:
+            await error_msg.delete()
+            await update.message.delete()
+            logger.info(f"🧹 Mensajes limpiados después de error inesperado para usuario {user_id}")
+        except Exception as cleanup_error:
+            logger.warning(f"No se pudieron limpiar mensajes: {cleanup_error}")
 
 async def handle_other_messages(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Manejar mensajes que no son URLs de Instagram"""
