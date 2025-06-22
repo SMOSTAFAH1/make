@@ -195,8 +195,7 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                     f"Tamaño: {file_size:,} bytes\n"
                     f"Enviando video..."
                 )
-                
-                # Enviar video
+                  # Enviar video
                 with open(video_path, 'rb') as video_file:
                     await update.message.reply_video(
                         video=video_file,
@@ -208,6 +207,13 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                 
                 # Eliminar mensaje de procesamiento
                 await processing_msg.delete()
+                
+                # Borrar mensaje original del usuario (solo si fue exitoso)
+                try:
+                    await update.message.delete()
+                    logger.info(f"✅ Mensaje original eliminado para usuario {user_id}")
+                except Exception as delete_error:
+                    logger.warning(f"No se pudo eliminar mensaje original: {delete_error}")
                 
                 logger.info(f"✅ Video enviado exitosamente a usuario {user_id}")
             else:
