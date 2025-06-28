@@ -46,7 +46,7 @@ class VideoDownloader:
         # Dominios soportados
         self.supported_domains = {
             'instagram': ['instagram.com'],
-            'youtube': ['youtube.com', 'youtu.be', 'm.youtube.com'],
+            'youtube': ['youtube.com', 'youtu.be', 'm.youtube.com', 'www.youtube.com'],
             'tiktok': ['tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com', 'www.tiktok.com']
         }
     
@@ -110,9 +110,15 @@ class VideoDownloader:
                 })
             elif platform == 'youtube':
                 ydl_opts.update({
-                    'format': 'best[ext=mp4][height<=480]/best[ext=mp4]/best',  # Calidad más baja para Telegram
+                    'format': 'best[ext=mp4][height<=720]/best[ext=mp4]/best',  # Mejor calidad para YouTube
                     'writesubtitles': False,
                     'writeautomaticsub': False,
+                    # Headers específicos para YouTube
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.5',
+                    }
                 })
             elif platform == 'tiktok':
                 ydl_opts.update({
@@ -372,7 +378,8 @@ def main():
                 filters.Regex(r'.*instagram\.com.*') |
                 filters.Regex(r'.*youtube\.com.*') |
                 filters.Regex(r'.*youtu\.be.*') |
-                filters.Regex(r'.*tiktok\.com.*')
+                filters.Regex(r'.*tiktok\.com.*') |
+                filters.Regex(r'.*m\.youtube\.com.*')
             ),
             handle_url
         ))
