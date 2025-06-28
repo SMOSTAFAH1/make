@@ -39,30 +39,32 @@ logger = logging.getLogger(__name__)
 
 # ==================== DOWNLOADER ====================
 
-class InstagramDownloader:
-    """Descargador de videos de Instagram usando yt-dlp"""
+class VideoDownloader:
+    """Descargador de videos de Instagram, YouTube y TikTok usando yt-dlp"""
     
     def __init__(self):
-        # Patrones más flexibles para Instagram
-        self.instagram_domains = ['instagram.com', 'www.instagram.com']
+        # Dominios soportados
+        self.supported_domains = {
+            'instagram': ['instagram.com'],
+            'youtube': ['youtube.com', 'youtu.be', 'm.youtube.com'],
+            'tiktok': ['tiktok.com', 'vm.tiktok.com', 'vt.tiktok.com', 'www.tiktok.com']
+        }
     
-    def is_instagram_url(self, url):
-        """Verificar si la URL es de Instagram - método súper flexible"""
+    def is_supported_url(self, url):
+        """Verificar si la URL es de una plataforma soportada"""
         url = url.strip().lower()
-          # Verificar si contiene instagram.com en cualquier parte
-        if 'instagram.com' in url:
-            # Verificar que sea una URL válida
-            if url.startswith('http://') or url.startswith('https://'):
-                return True
-            # Si no tiene protocolo, asumir que es válida
-            elif url.startswith('instagram.com') or url.startswith('www.instagram.com'):
-                return True
         
-        return False
+        # Verificar cada plataforma
+        for platform, domains in self.supported_domains.items():
+            for domain in domains:
+                if domain in url:
+                    return True, platform
+        
+        return False, None
       
-    def download(self, instagram_url):
+    def download(self, video_url):
         """
-        Descargar video de Instagram con configuración optimizada
+        Descargar video de Instagram, YouTube o TikTok con configuración optimizada
         
         Returns:
             tuple: (ruta_archivo, mensaje) o (None, mensaje_error)
@@ -72,42 +74,68 @@ class InstagramDownloader:
             
             # Crear directorio temporal
             temp_dir = tempfile.mkdtemp()
-            logger.info(f"Descargando: {instagram_url}")
+            logger.info(f"Descargando: {video_url}")
             
-            # Configurar yt-dlp con opciones avanzadas para Instagram
+            # Detectar plataforma
+            is_supported, platform = self.is_supported_url(video_url)
+            if not is_supported:
+                return None, "URL no soportada"
+            
+            # Configurar yt-dlp con opciones específicas por plataforma
             ydl_opts = {
-                'format': 'best[ext=mp4]/best',
+                'format': 'best[ext=mp4][height<=720]/best[ext=mp4]/best',
                 'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
                 'noplaylist': True,
                 'quiet': True,
                 'no_warnings': True,
-                # Opciones específicas para Instagram
                 'extract_flat': False,
                 'writethumbnail': False,
                 'writeinfojson': False,
                 'ignoreerrors': True,
-                # Headers para evitar bloqueos
-                'http_headers': {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                    'Accept-Language': 'en-us,en;q=0.5',
-                    'Accept-Encoding': 'gzip,deflate',
-                    'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
-                    'Connection': 'keep-alive',
-                },
-                # Reintentos
                 'retries': 3,
                 'socket_timeout': 30,
             }
             
+            # Configuraciones específicas por plataforma
+            if platform == 'instagram':
+                ydl_opts.update({
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-us,en;q=0.5',
+                        'Accept-Encoding': 'gzip,deflate',
+                        'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+                        'Connection': 'keep-alive',
+                    }
+                })
+            elif platform == 'youtube':
+                ydl_opts.update({
+                    'format': 'best[ext=mp4][height<=480]/best[ext=mp4]/best',  # Calidad más baja para Telegram
+                    'writesubtitles': False,
+                    'writeautomaticsub': False,
+                })
+            elif platform == 'tiktok':
+                ydl_opts.update({
+                    'http_headers': {
+                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.0 Mobile/15E148 Safari/604.1',
+                        'Referer': 'https://www.tiktok.com/',
+                    }
+                })
+            
             # Descargar
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                ydl.download([instagram_url])
+                ydl.download([video_url])
             
             # Buscar archivo descargado
             for file in os.listdir(temp_dir):
-                if file.endswith(('.mp4', '.mkv', '.webm')):
+                if file.endswith(('.mp4', '.mkv', '.webm', '.mov')):
                     video_path = os.path.join(temp_dir, file)
+                    
+                    # Verificar tamaño del archivo (límite de Telegram: 50MB)
+                    file_size = os.path.getsize(video_path)
+                    if file_size > 50 * 1024 * 1024:  # 50MB
+                        shutil.rmtree(temp_dir)
+                        return None, f"Video muy grande ({file_size:,} bytes). Máximo 50MB."
                     
                     # Mover a archivo temporal con nombre fijo
                     final_path = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4').name
@@ -116,9 +144,8 @@ class InstagramDownloader:
                     # Limpiar directorio temporal
                     shutil.rmtree(temp_dir)
                     
-                    file_size = os.path.getsize(final_path)
-                    logger.info(f"✅ Descarga exitosa: {file_size} bytes")
-                    return final_path, f"Video descargado ({file_size:,} bytes)"
+                    logger.info(f"✅ Descarga exitosa: {file_size} bytes desde {platform}")
+                    return final_path, f"Video de {platform.title()} descargado ({file_size:,} bytes)"
             
             # No se encontró archivo
             shutil.rmtree(temp_dir)
@@ -138,47 +165,56 @@ class InstagramDownloader:
 # ==================== BOT HANDLERS ====================
 
 # Instancia global del descargador
-downloader = InstagramDownloader()
+downloader = VideoDownloader()
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Comando /start"""
     welcome_msg = """
-🤖 **Instagram Downloader Bot**
+🤖 **Video Downloader Bot**
 
-¡Hola! Envíame un enlace de Instagram y te descargaré el video automáticamente.
+¡Hola! Envíame un enlace y te descargaré el video automáticamente.
 
-📱 **Formatos soportados:**
-• Posts de Instagram
-• Reels
-• IGTV
+📱 **Plataformas soportadas:**
+• 📸 Instagram (Posts, Reels, IGTV)
+• ▶️ YouTube (Videos y Shorts)
+• 🎵 TikTok (Videos y efectos)
 
 🚀 **Uso:**
 Solo pega el enlace y yo me encargo del resto!
 
 🔧 **Powered by yt-dlp** - Ultra confiable y rápido
+
+⚡ **Características:**
+• Reintentos automáticos (hasta 6 intentos)
+• Auto-limpieza de mensajes
+• Soporte para múltiples formatos
     """.strip()
     
     await update.message.reply_text(welcome_msg)
     logger.info(f"Usuario {update.effective_user.id} inició el bot")
 
 async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Manejar URLs de Instagram"""
+    """Manejar URLs de videos de Instagram, YouTube y TikTok"""
     url = update.message.text.strip()
     user_id = update.effective_user.id
     
     # Verificar URL
-    if not downloader.is_instagram_url(url):
+    is_supported, platform = downloader.is_supported_url(url)
+    if not is_supported:
         await update.message.reply_text(
-            "❌ **URL no válida**\n\n"
-            "Por favor, envía un enlace válido de Instagram.\n"
-            "Ejemplo: `https://www.instagram.com/p/...`"
+            "❌ **URL no soportada**\n\n"
+            "Por favor, envía un enlace válido de:\n"
+            "• 📸 Instagram\n"
+            "• ▶️ YouTube\n"
+            "• 🎵 TikTok"
         )
-        logger.warning(f"Usuario {user_id} envió URL inválida: {url}")
+        logger.warning(f"Usuario {user_id} envió URL no soportada: {url}")
         return
     
     # Mensaje de procesamiento
+    platform_emoji = {'instagram': '📸', 'youtube': '▶️', 'tiktok': '🎵'}
     processing_msg = await update.message.reply_text(
-        "🔄 **Procesando...**\n"
+        f"🔄 **Procesando {platform_emoji.get(platform, '📹')} {platform.title()}...**\n"
         "Descargando tu video, esto puede tomar unos segundos."
     )
     
@@ -191,10 +227,10 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         for attempt in range(max_retries + 1):  # +1 para incluir el intento inicial
             if attempt > 0:
                 await processing_msg.edit_text(
-                    f"🔄 **Reintentando ({attempt}/{max_retries})...**\n"
+                    f"🔄 **Reintentando ({attempt}/{max_retries}) {platform_emoji.get(platform, '📹')} {platform.title()}...**\n"
                     f"Descargando tu video, esto puede tomar unos segundos."
                 )
-                logger.info(f"Reintento {attempt} para usuario {user_id}")
+                logger.info(f"Reintento {attempt} para usuario {user_id} - {platform}")
             
             # Descargar video
             video_path, message = downloader.download(url)
@@ -223,7 +259,7 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
                 with open(video_path, 'rb') as video_file:
                     await update.message.reply_video(
                         video=video_file,
-                        caption="📱 **Video de Instagram**\n🔧 Powered by yt-dlp"
+                        caption=f"{platform_emoji.get(platform, '�')} **Video de {platform.title()}**\n🔧 Powered by yt-dlp"
                     )
                 
                 # Limpiar archivo
@@ -295,10 +331,13 @@ async def handle_url(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
             logger.warning(f"No se pudieron limpiar mensajes: {cleanup_error}")
 
 async def handle_other_messages(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Manejar mensajes que no son URLs de Instagram"""
+    """Manejar mensajes que no son URLs soportadas"""
     await update.message.reply_text(
         "🤔 **No entiendo ese mensaje**\n\n"
-        "Envíame un enlace de Instagram para descargar el video.\n"
+        "Envíame un enlace de video para descargarlo:\n"
+        "• 📸 Instagram\n"
+        "• ▶️ YouTube\n"
+        "• 🎵 TikTok\n\n"
         "Usa /start para ver las instrucciones completas."
     )
 
@@ -310,7 +349,8 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 def main():
     """Función principal del bot"""
-    print("🚀 Iniciando Instagram Downloader Bot...")
+    print("🚀 Iniciando Video Downloader Bot...")
+    print("📸 Instagram | ▶️ YouTube | 🎵 TikTok")
     print("🔧 Presiona Ctrl+C para detener")
     print("-" * 50)
     
@@ -328,7 +368,12 @@ def main():
           # Añadir handlers
         application.add_handler(CommandHandler("start", start_command))
         application.add_handler(MessageHandler(
-            filters.TEXT & filters.Regex(r'.*instagram\.com.*'),
+            filters.TEXT & (
+                filters.Regex(r'.*instagram\.com.*') |
+                filters.Regex(r'.*youtube\.com.*') |
+                filters.Regex(r'.*youtu\.be.*') |
+                filters.Regex(r'.*tiktok\.com.*')
+            ),
             handle_url
         ))
         application.add_handler(MessageHandler(
