@@ -24,7 +24,9 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 # ==================== CONFIGURACIÓN ====================
 
-BOT_TOKEN = "8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4"
+BOT_TOKEN = os.getenv('BOT_TOKEN')
+if not BOT_TOKEN:
+    raise ValueError("BOT_TOKEN environment variable is required")  
 
 # Configurar logging
 logging.basicConfig(
