@@ -8,7 +8,10 @@ Bot de Telegram ultra simple que descarga videos de Instagram automáticamente.
 # 1. Instalar dependencias
 pip install -r requirements.txt
 
-# 2. Ejecutar bot
+# 2. Configurar token del bot
+export BOT_TOKEN="tu_token_aqui"
+
+# 3. Ejecutar bot
 python bot.py
 ```
 
@@ -28,10 +31,30 @@ python bot.py
 
 ##  Configuración
 
-Edita `BOT_TOKEN` en `bot.py`:
-```python
-BOT_TOKEN = "tu_token_aqui"
+### 🔐 Token del Bot (Requerido)
+
+Para mayor seguridad, el token del bot se obtiene de una variable de entorno:
+
+**Desarrollo local:**
+```bash
+export BOT_TOKEN="tu_token_aqui"
+python bot.py
 ```
+
+**O usando un archivo .env:**
+```bash
+echo "BOT_TOKEN=tu_token_aqui" > .env
+export $(cat .env | xargs)
+python bot.py
+```
+
+**CI/CD (GitHub Actions):**
+El token debe configurarse como un secreto en GitHub:
+- Ve a Settings > Secrets and variables > Actions
+- Crea un nuevo secret llamado `BOT_TOKEN`
+- Pega tu token como valor
+
+> ⚠️ **Nunca hagas commit del token en el código fuente**
 
 ## � Formatos soportados
 
