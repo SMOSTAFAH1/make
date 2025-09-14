@@ -24,9 +24,29 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 
 # ==================== CONFIGURACIÓN ====================
 
+def validate_bot_token(token):
+    """Validar formato del token del bot de Telegram"""
+    if not token:
+        return False, "BOT_TOKEN no está configurado"
+    
+    # El formato debe ser: número:cadena_alfanumérica
+    # Ejemplo: 123456789:ABCDEFghijklmnopqrstuvwxyz
+    token_pattern = r'^\d+:[A-Za-z0-9_-]+$'
+    if not re.match(token_pattern, token):
+        return False, "Token inválido. Debe tener formato: números:letras_números (ej: 123456789:ABCdef123)"
+    
+    return True, "Token válido"
+
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-if not BOT_TOKEN:
-    raise ValueError("BOT_TOKEN environment variable is required")  
+is_valid, message = validate_bot_token(BOT_TOKEN)
+if not is_valid:
+    print("❌ Error de configuración:")
+    print(f"   {message}")
+    print("\n💡 Para configurar el token:")
+    print("   export BOT_TOKEN='tu_token_aqui'")
+    print("   # O crear archivo .env (ver .env.example)")
+    print("\n🔗 Obtener token: https://t.me/BotFather")
+    raise ValueError(f"Error en BOT_TOKEN: {message}")  
 
 # Configurar logging
 logging.basicConfig(
