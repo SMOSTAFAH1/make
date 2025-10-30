@@ -1,0 +1,42 @@
+2025-10-30 20:13:05,093 - bot - INFO - ✅ yt-dlp disponible
+2025-10-30 20:13:05,126 - bot - INFO - 🤖 Bot iniciado en modo polling (desarrollo local)...
+2025-10-30 20:13:05,238 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/getMe "HTTP/1.1 200 OK"
+2025-10-30 20:13:05,270 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/deleteWebhook "HTTP/1.1 200 OK"
+2025-10-30 20:13:05,272 - telegram.ext.Application - INFO - Application started
+2025-10-30 20:13:15,114 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/getUpdates "HTTP/1.1 200 OK"
+2025-10-30 20:13:17,469 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/getUpdates "HTTP/1.1 200 OK"
+2025-10-30 20:13:17,749 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/sendMessage "HTTP/1.1 200 OK"
+2025-10-30 20:13:27,255 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/getUpdates "HTTP/1.1 200 OK"
+2025-10-30 20:13:27,747 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/getUpdates "HTTP/1.1 200 OK"
+2025-10-30 20:13:27,902 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/sendMessage "HTTP/1.1 200 OK"
+2025-10-30 20:13:27,907 - bot - INFO - Descargando: https://vm.tiktok.com/ZNd3PdhUQ
+2025-10-30 20:13:29,759 - bot - WARNING - No se encontró archivo de video
+2025-10-30 20:13:31,831 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/editMessageText "HTTP/1.1 200 OK"
+2025-10-30 20:13:31,833 - bot - INFO - Reintento 1 para usuario 1303737338 - tiktok
+2025-10-30 20:13:31,835 - bot - INFO - Descargando: https://vm.tiktok.com/ZNd3PdhUQ
+2025-10-30 20:13:33,121 - bot - WARNING - No se encontró archivo de video
+2025-10-30 20:13:35,243 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/editMessageText "HTTP/1.1 200 OK"
+2025-10-30 20:13:35,244 - bot - INFO - Reintento 2 para usuario 1303737338 - tiktok
+2025-10-30 20:13:35,246 - bot - INFO - Descargando: https://vm.tiktok.com/ZNd3PdhUQ
+2025-10-30 20:13:36,218 - bot - WARNING - No se encontró archivo de video
+2025-10-30 20:13:37,490 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/getUpdates "HTTP/1.1 200 OK"
+2025-10-30 20:13:38,275 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/editMessageText "HTTP/1.1 200 OK"
+2025-10-30 20:13:38,276 - bot - INFO - Reintento 3 para usuario 1303737338 - tiktok
+2025-10-30 20:13:38,278 - bot - INFO - Descargando: https://vm.tiktok.com/ZNd3PdhUQ
+2025-10-30 20:13:39,373 - bot - WARNING - No se encontró archivo de video
+2025-10-30 20:13:41,432 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/editMessageText "HTTP/1.1 200 OK"
+2025-10-30 20:13:41,434 - bot - INFO - Reintento 4 para usuario 1303737338 - tiktok
+2025-10-30 20:13:41,436 - bot - INFO - Descargando: https://vm.tiktok.com/ZNd3PdhUQ
+2025-10-30 20:13:43,387 - bot - WARNING - No se encontró archivo de video
+2025-10-30 20:13:45,453 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/editMessageText "HTTP/1.1 200 OK"
+2025-10-30 20:13:45,455 - bot - INFO - Reintento 5 para usuario 1303737338 - tiktok
+2025-10-30 20:13:45,457 - bot - INFO - Descargando: https://vm.tiktok.com/ZNd3PdhUQ
+2025-10-30 20:13:46,425 - bot - WARNING - No se encontró archivo de video
+2025-10-30 20:13:46,478 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/editMessageText "HTTP/1.1 200 OK"
+2025-10-30 20:13:47,083 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/getUpdates "HTTP/1.1 200 OK"
+2025-10-30 20:13:56,521 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/getUpdates "HTTP/1.1 200 OK"
+2025-10-30 20:13:56,522 - telegram.ext.Application - INFO - Application is stopping. This might take a moment.
+2025-10-30 20:13:57,663 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/deleteMessage "HTTP/1.1 200 OK"
+2025-10-30 20:13:57,710 - httpx - INFO - HTTP Request: POST https://api.telegram.org/bot8169625627:AAFQ5eBXUrlzs65J8AZeUtgiIXhFZah35C4/deleteMessage "HTTP/1.1 200 OK"
+2025-10-30 20:13:57,711 - bot - INFO - 🧹 Mensajes limpiados después de fallo para usuario 1303737338
+2025-10-30 20:13:57,712 - telegram.ext.Application - INFO - Application.stop() complete
