@@ -85,7 +85,7 @@ class VideoDownloader:
             
             # Configurar yt-dlp con opciones específicas por plataforma
             ydl_opts = {
-                'format': 'best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best',
+                'format': 'best[ext=mp4]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/bestvideo+bestaudio/best',
                 'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
                 'noplaylist': True,
                 'quiet': False,
@@ -101,13 +101,21 @@ class VideoDownloader:
                 'nocheckcertificate': True,
                 'prefer_insecure': False,
                 'age_limit': None,
+                # CRÍTICO: Intentar múltiples formatos
+                'merge_output_format': 'mp4',
+                'postprocessors': [{
+                    'key': 'FFmpegVideoConvertor',
+                    'preferedformat': 'mp4',
+                }],
             }
             
             # Configuraciones específicas por plataforma
             if platform == 'instagram':
                 ydl_opts.update({
+                    # Intentar múltiples formatos de Instagram
+                    'format': 'best[ext=mp4]/bestvideo[ext=mp4]+bestaudio/best',
                     'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                         'Accept-Language': 'en-US,en;q=0.9',
                         'Accept-Encoding': 'gzip, deflate, br',
@@ -116,31 +124,38 @@ class VideoDownloader:
                         'Sec-Fetch-Dest': 'document',
                         'Sec-Fetch-Mode': 'navigate',
                         'Sec-Fetch-Site': 'none',
-                    }
+                        'X-IG-App-ID': '936619743392459',
+                        'X-ASBD-ID': '198387',
+                        'X-IG-WWW-Claim': '0',
+                    },
+                    # IMPORTANTE: Cookies y age limit para contenido restringido
+                    'age_limit': 100,
+                    'skip_download': False,
                 })
             elif platform == 'youtube':
                 ydl_opts.update({
-                    'format': 'best[ext=mp4][height<=1080]/best[ext=mp4]/best',
+                    'format': 'best[ext=mp4][height<=1080]/bestvideo[ext=mp4]+bestaudio/best',
                     'writesubtitles': False,
                     'writeautomaticsub': False,
                     'http_headers': {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Language': 'en-US,en;q=0.9',
-                    }
+                    },
+                    'age_limit': 100,
                 })
             elif platform == 'tiktok':
                 ydl_opts.update({
-                    'format': 'best[ext=mp4]/best',
+                    'format': 'best[ext=mp4]/bestvideo[ext=mp4]+bestaudio/best',
                     'cookiefile': None,
                     'http_headers': {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+                        'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
                         'Referer': 'https://www.tiktok.com/',
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                         'Accept-Language': 'en-US,en;q=0.9',
-                        'sec-ch-ua': '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
-                        'sec-ch-ua-mobile': '?0',
-                        'sec-ch-ua-platform': '"Windows"',
+                        'sec-ch-ua': '"Mobile WebKit";v="17", "Safari";v="17", "Not_A Brand";v="24"',
+                        'sec-ch-ua-mobile': '?1',
+                        'sec-ch-ua-platform': '"iOS"',
                         'sec-fetch-dest': 'document',
                         'sec-fetch-mode': 'navigate',
                         'sec-fetch-site': 'none',
@@ -151,6 +166,7 @@ class VideoDownloader:
                     'ignoreerrors': True,
                     'no_check_certificate': True,
                     'prefer_insecure': True,
+                    'age_limit': 100,
                 })
             
             # Descargar
@@ -158,18 +174,29 @@ class VideoDownloader:
                 try:
                     ydl.download([video_url])
                 except Exception as download_error:
-                    # Si falla con TikTok, intentar con extractor genérico
-                    if platform == 'tiktok':
-                        logger.warning(f"Fallo descarga TikTok, intentando con extractor genérico: {download_error}")
-                        ydl_opts['force_generic_extractor'] = True
+                    # Si falla, intentar con extractor genérico para CUALQUIER plataforma
+                    logger.warning(f"Fallo descarga {platform}, intentando con extractor genérico: {download_error}")
+                    ydl_opts['force_generic_extractor'] = True
+                    # Simplificar formato para extractor genérico
+                    ydl_opts['format'] = 'best'
+                    try:
                         with yt_dlp.YoutubeDL(ydl_opts) as ydl_generic:
                             ydl_generic.download([video_url])
-                    else:
-                        raise
+                    except Exception as generic_error:
+                        # Último intento: sin ninguna opción especial
+                        logger.warning(f"Fallo extractor genérico, último intento básico: {generic_error}")
+                        basic_opts = {
+                            'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
+                            'format': 'best',
+                            'quiet': True,
+                        }
+                        with yt_dlp.YoutubeDL(basic_opts) as ydl_basic:
+                            ydl_basic.download([video_url])
             
-            # Buscar archivo descargado
+            # Buscar archivo descargado (buscar CUALQUIER extensión de video)
+            video_extensions = ('.mp4', '.mkv', '.webm', '.mov', '.avi', '.flv', '.m4v', '.3gp')
             for file in os.listdir(temp_dir):
-                if file.endswith(('.mp4', '.mkv', '.webm', '.mov')):
+                if file.endswith(video_extensions):
                     video_path = os.path.join(temp_dir, file)
                     
                     # Verificar tamaño del archivo (límite de Telegram: 50MB)

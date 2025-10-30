@@ -2,3 +2,5 @@
 python-telegram-bot[all]==21.7
 # Usar versión nightly de yt-dlp para TikTok
 git+https://github.com/yt-dlp/yt-dlp.git@master
+# FFmpeg para conversión de formatos
+ffmpeg-python
