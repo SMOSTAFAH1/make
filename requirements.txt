@@ -1,6 +1,4 @@
-# Bot de Telegram para descargar videos - VERSIÓN NIGHTLY (más actualizada)
+# Bot de Telegram para descargar videos - VERSIÓN ESTABLE
 python-telegram-bot[all]==21.7
-# Usar versión nightly de yt-dlp para TikTok
-git+https://github.com/yt-dlp/yt-dlp.git@master
-# FFmpeg para conversión de formatos
-ffmpeg-python
+# Versión estable de yt-dlp (más confiable en Railway)
+yt-dlp==2024.12.23
